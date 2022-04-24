@@ -26,6 +26,7 @@
     <ClCompile Include="..\..\..\common\TraceAdapter.cpp">
       <Filter>public\common</Filter>
     </ClCompile>
+    <ClCompile Include="y4mreader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\common\AMFFactory.h">
@@ -46,6 +47,7 @@
     <ClInclude Include="..\..\..\common\TraceAdapter.h">
       <Filter>public\common</Filter>
     </ClInclude>
+    <ClInclude Include="y4mreader.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="public">

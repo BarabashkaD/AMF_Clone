@@ -49,6 +49,7 @@
 
 #define AMF_FACILITY L"SimpleEncoder"
 
+#include "y4mreader.h"
 //#define ENABLE_4K
 //#define ENABLE_EFC // color conversion inside encoder component. Will use GFX or HW if available
 //#define ENABLE_10_BIT
@@ -85,7 +86,7 @@ static amf_int32 heightIn                 = 1080*2;
 static amf_int32 widthIn                  = 1920;
 static amf_int32 heightIn                 = 1080;
 #endif
-static amf_int32 frameRateIn              = 30;
+//dv remove static amf_int32 frameRateIn              = 30;
 static amf_int64 bitRateIn                = 5000000L; // in bits, 5MBit
 static amf_int32 rectSize                 = 50;
 static amf_int32 frameCount               = 500;
@@ -129,6 +130,14 @@ int _tmain(int argc, _TCHAR* argv[])
 int main(int argc, char* argv[])
 #endif
 {
+    y4mreader fyrd;
+    
+    if (fyrd.open_file_y4m("C:\\Clips\\GTAV.y4m") != 0)
+        exit(-1);
+
+    widthIn = fyrd.width;
+    heightIn = fyrd.height;
+
     AMF_RESULT res = AMF_OK; // error checking can be added later
     res = g_AMFFactory.Init();
     if(res != AMF_OK)
@@ -193,8 +202,8 @@ int main(int argc, char* argv[])
         AMF_RETURN_IF_FAILED(res, L"SetProperty(AMF_VIDEO_ENCODER_TARGET_BITRATE, %" LPRId64 L") failed", bitRateIn);
         res = encoder->SetProperty(AMF_VIDEO_ENCODER_FRAMESIZE, ::AMFConstructSize(widthIn, heightIn));
         AMF_RETURN_IF_FAILED(res, L"SetProperty(AMF_VIDEO_ENCODER_FRAMESIZE, %dx%d) failed", widthIn, heightIn);
-        res = encoder->SetProperty(AMF_VIDEO_ENCODER_FRAMERATE, ::AMFConstructRate(frameRateIn, 1));
-        AMF_RETURN_IF_FAILED(res, L"SetProperty(AMF_VIDEO_ENCODER_FRAMERATE, %dx%d) failed", frameRateIn, 1);
+        res = encoder->SetProperty(AMF_VIDEO_ENCODER_FRAMERATE, ::AMFConstructRate(fyrd.fps_num , fyrd.fps_den));
+        AMF_RETURN_IF_FAILED(res, L"SetProperty(AMF_VIDEO_ENCODER_FRAMERATE, %dx%d) failed", fyrd.fps_num, fyrd.fps_den);
 
 #if defined(ENABLE_4K)
         res = encoder->SetProperty(AMF_VIDEO_ENCODER_PROFILE, AMF_VIDEO_ENCODER_PROFILE_HIGH);
@@ -221,8 +230,8 @@ int main(int argc, char* argv[])
         AMF_RETURN_IF_FAILED(res, L"SetProperty(AMF_VIDEO_ENCODER_HEVC_TARGET_BITRATE, %" LPRId64 L") failed", bitRateIn);
         res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_FRAMESIZE, ::AMFConstructSize(widthIn, heightIn));
         AMF_RETURN_IF_FAILED(res, L"SetProperty(AMF_VIDEO_ENCODER_HEVC_FRAMESIZE, %dx%d) failed", widthIn, heightIn);
-        res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_FRAMERATE, ::AMFConstructRate(frameRateIn, 1));
-        AMF_RETURN_IF_FAILED(res, L"SetProperty(AMF_VIDEO_ENCODER_HEVC_FRAMERATE, %dx%d) failed", frameRateIn, 1);
+        res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_FRAMERATE, ::AMFConstructRate(fyrd.fps_num, fyrd.fps_den));
+        AMF_RETURN_IF_FAILED(res, L"SetProperty(AMF_VIDEO_ENCODER_HEVC_FRAMERATE, %dx%d) failed", fyrd.fps_num, fyrd.fps_den);
 
         res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_COLOR_BIT_DEPTH, eDepth);
         AMF_RETURN_IF_FAILED(res, L"SetProperty(AMF_VIDEO_ENCODER_HEVC_COLOR_BIT_DEPTH, %d) failed", eDepth);
@@ -244,31 +253,33 @@ int main(int argc, char* argv[])
 
     // encode some frames
     amf_int32 submitted = 0;
+    
+    amf_pts start_time = amf_high_precision_clock();
+    amf_pts delta_time = (1000.0 * 1000.0 * 10.0) / (fyrd.fps_num/ fyrd.fps_den);
     while(submitted < frameCount)
     {
-        if(surfaceIn == NULL)
         {
-            surfaceIn = NULL;
-            res = context->AllocSurface(memoryTypeIn, formatIn, widthIn, heightIn, &surfaceIn);
+            res = context->AllocSurface(amf::AMF_MEMORY_HOST, formatIn, widthIn, heightIn, &surfaceIn);
             AMF_RETURN_IF_FAILED(res, L"AllocSurface() failed");
+            {
+                amf::AMFPlane* pPlaneY = surfaceIn->GetPlaneAt(0);
+                amf::AMFPlane* pPlaneUV = surfaceIn->GetPlaneAt(1);
+                amf_uint8* pDataY = (amf_uint8*)pPlaneY->GetNative();
+                amf_uint8* pDataUV = (amf_uint8*)pPlaneUV->GetNative();
 
-            if(memoryTypeIn == amf::AMF_MEMORY_VULKAN)
-            {
-                FillSurfaceVulkan(context, surfaceIn);
+                amf_int32 widthY = pPlaneY->GetWidth();
+                amf_int32 heightY = pPlaneY->GetHeight();
+                amf_int32 lineY = pPlaneY->GetHPitch();
+                amf_int32 widthUV = pPlaneUV->GetWidth();
+                amf_int32 heightUV = pPlaneUV->GetHeight();
+                amf_int32 lineUV = pPlaneUV->GetHPitch();
+                
+                if (fyrd.read_frame_NV12(pDataY, pDataUV, lineY, lineUV, submitted) < 0)
+                    break;
             }
-#ifdef _WIN32
-            else if(memoryTypeIn  == amf::AMF_MEMORY_DX9)
-            {
-                FillSurfaceDX9(context, surfaceIn);
-            }
-            else
-            {
-                FillSurfaceDX11(context, surfaceIn);
-            }
-#endif
-        }
+            surfaceIn->Convert(memoryTypeIn);
+        }      
         // encode
-        amf_pts start_time = amf_high_precision_clock();
         surfaceIn->SetProperty(START_TIME_PROPERTY, start_time);
 
         res = encoder->SubmitInput(surfaceIn);
@@ -286,7 +297,9 @@ int main(int argc, char* argv[])
             surfaceIn = NULL;
             submitted++;
         }
+        start_time += delta_time;
     }
+    fyrd.close_file_y4m();
     // drain encoder; input queue can be full
     while(true)
     {
