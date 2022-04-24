@@ -150,6 +150,8 @@ int main(int argc, char* argv[])
 
     amf::AMFTraceEnableWriter(AMF_TRACE_WRITER_CONSOLE, true);
     amf::AMFTraceEnableWriter(AMF_TRACE_WRITER_DEBUG_OUTPUT, true);
+    amf::AMFTraceEnableWriter(AMF_TRACE_WRITER_FILE, true);
+    amf::AMFTraceSetGlobalLevel(AMF_TRACE_TRACE);//AMF_TRACE_INFO
 
     // initialize AMF
     amf::AMFContextPtr context;
@@ -730,7 +732,7 @@ void PollingThread::Run()
     amf_pts write_duration = 0;
     amf_pts encode_duration = 0;
     amf_pts last_poll_time = 0;
-
+    amf_size total_size = 0;
     AMF_RESULT res = AMF_OK; // error checking can be added later
     while(true)
     {
@@ -764,6 +766,7 @@ void PollingThread::Run()
             }
 
             amf::AMFBufferPtr buffer(data); // query for buffer interface
+            total_size += buffer->GetSize();
             m_pFile.write(reinterpret_cast<char*>(buffer->GetNative()), buffer->GetSize());
 
             write_duration += amf_high_precision_clock() - poll_time;
