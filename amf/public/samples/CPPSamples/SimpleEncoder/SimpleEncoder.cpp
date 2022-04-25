@@ -58,8 +58,8 @@
 static const wchar_t *pCodec = AMFVideoEncoder_HEVC;
 static AMF_COLOR_BIT_DEPTH_ENUM eDepth = AMF_COLOR_BIT_DEPTH_10;
 #else
-static const wchar_t *pCodec = AMFVideoEncoderVCE_AVC;
-//static const wchar_t *pCodec = AMFVideoEncoder_HEVC;
+//static const wchar_t *pCodec = AMFVideoEncoderVCE_AVC;
+static const wchar_t *pCodec = AMFVideoEncoder_HEVC;
 static AMF_COLOR_BIT_DEPTH_ENUM eDepth = AMF_COLOR_BIT_DEPTH_8;
 #endif
 
@@ -87,9 +87,9 @@ static amf_int32 widthIn                  = 1920;
 static amf_int32 heightIn                 = 1080;
 #endif
 //dv remove static amf_int32 frameRateIn              = 30;
-static amf_int64 bitRateIn                = 5000000L; // in bits, 5MBit
+static amf_int64 bitRateIn                = 50000000L; // in bits, 5MBit
 static amf_int32 rectSize                 = 50;
-static amf_int32 frameCount               = 500;
+static amf_int32 frameCount               = 300;
 static bool bMaximumSpeed = true;
 
 #define START_TIME_PROPERTY L"StartTimeProperty" // custom property ID to store submission time in a frame - all custom properties are copied from input to output
@@ -132,7 +132,7 @@ int main(int argc, char* argv[])
 {
     y4mreader fyrd;
     
-    if (fyrd.open_file_y4m("C:\\Clips\\GTAV.y4m") != 0)
+    if (fyrd.open_file_y4m("C:\\ClipSources\\GTAV.y4m") != 0)
         exit(-1);
 
     widthIn = fyrd.width;
