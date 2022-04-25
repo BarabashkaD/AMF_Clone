@@ -219,6 +219,31 @@ int main(int argc, char* argv[])
     }
     else
     {
+        {
+           // res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_FRAMESIZE,::AMFConstructSize(configParams().width, sliceHeightInPixels()));
+           // res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_FRAMERATE, ::AMFConstructRate(configParams().fps, 1));
+           //d res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_USAGE, AMF_VIDEO_ENCODER_HEVC_USAGE_ULTRA_LOW_LATENCY);
+            res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_LOWLATENCY_MODE, true);
+            res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_PROFILE, AMF_VIDEO_ENCODER_HEVC_PROFILE_MAIN);
+            res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_TIER, AMF_VIDEO_ENCODER_HEVC_TIER_MAIN);
+            res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_PROFILE_LEVEL, AMF_LEVEL_6_1);
+            res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_MAX_LTR_FRAMES, 0);
+            res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_MAX_NUM_REFRAMES, 1);
+            res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_GOP_SIZE, 0);
+            res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_NUM_GOPS_PER_IDR, 1);
+            res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_HEADER_INSERTION_MODE, false);
+            res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD,AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR);
+            //dres = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET, AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_SPEED);
+            res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_ENABLE_VBAQ, true);
+            res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_VBV_BUFFER_SIZE, (735 * 1024));
+            res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_HEADER_INSERTION_MODE,AMF_VIDEO_ENCODER_HEVC_HEADER_INSERTION_MODE_NONE);
+            
+            
+            //dinamic
+            //dres = encoder_->SetProperty(AMF_VIDEO_ENCODER_HEVC_TARGET_BITRATE, vbrRargetBitRate);
+            res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_PEAK_BITRATE, bitRateIn);
+            res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_ENFORCE_HRD, true);
+        }
         res = encoder->SetProperty(AMF_VIDEO_ENCODER_HEVC_USAGE, AMF_VIDEO_ENCODER_HEVC_USAGE_TRANSCODING);
         AMF_RETURN_IF_FAILED(res, L"SetProperty(AMF_VIDEO_ENCODER_HEVC_USAGE, AMF_VIDEO_ENCODER_HEVC_USAGE_TRANSCODING)");
 
